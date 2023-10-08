@@ -4,17 +4,17 @@
   "framework": null,
   "builds": [
     {
-      "src": "main.py",
+      "src": "app.py",
       "use": "@vercel/python"
     }
   ],
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "main.py"
+      "destination": "app.py"
     }
   ],
   "env": {
-    "PANDORA_SERVER_LISTEN": "false"
+    "SERVER": "0.0.0.0:8018"
   }
 }
