@@ -1,4 +1,6 @@
 pandora-chatgpt[cloud]
+pandora-chatgpt[api]
+pandora-chatgpt
 
 httpx~=0.23.3
 requests~=2.28.2

@@ -1,45 +1,48 @@
-from os import getenv
+import os
+from os.path import join, abspath, dirname
 
 import httpx
 import requests
+from flask import request, jsonify
+from pandora.exts.config import USER_CONFIG_DIR
 from pandora.exts.token import check_access_token_out, check_access_token
+from pandora.launcher import read_access_token, save_access_token
 from pandora.openai.api import ChatGPT
 from pandora_cloud.server import ChatBot as CloudServer
-
-from flask import request, jsonify
+from waitress import serve
 
 ACCESS_TOKEN = None
 
 
-# def get_access_token(refresh_token: str):
-#     default_token_file = os.path.join(USER_CONFIG_DIR, 'access_token.dat')
-#     if os.path.exists(default_token_file):
-#         access_token = read_access_token(default_token_file)
-#     else:
-#         access_token = None
-#     if not access_token or not check_access_token_out(access_token):
-#         access_token = requests.post(
-#             'https://ai.fakeopen.com/auth/refresh',
-#             data={'refresh_token': refresh_token}
-#         ).json().get('access_token', '')
-#         save_access_token(access_token)
-#     return access_token
-
-
 def get_access_token(refresh_token: str):
-    global ACCESS_TOKEN
-    if not ACCESS_TOKEN or not check_access_token_out(ACCESS_TOKEN):
-        ACCESS_TOKEN = requests.post(
+    default_token_file = os.path.join(USER_CONFIG_DIR, 'access_token.dat')
+    if os.path.exists(default_token_file):
+        access_token = read_access_token(default_token_file)
+    else:
+        access_token = None
+    if not access_token or not check_access_token_out(access_token):
+        access_token = requests.post(
             'https://ai.fakeopen.com/auth/refresh',
             data={'refresh_token': refresh_token}
         ).json().get('access_token', '')
-    return ACCESS_TOKEN
+        save_access_token(access_token)
+    return access_token
+
+
+# def get_access_token(refresh_token: str):
+#     global ACCESS_TOKEN
+#     if not ACCESS_TOKEN or not check_access_token_out(ACCESS_TOKEN):
+#         ACCESS_TOKEN = requests.post(
+#             'https://ai.fakeopen.com/auth/refresh',
+#             data={'refresh_token': refresh_token}
+#         ).json().get('access_token', '')
+#     return ACCESS_TOKEN
 
 
 class MyCloudServer(CloudServer):
-    def __init__(self, refresh_token: str):
+    def __init__(self, refresh_token: str, debug=True):
         self.refresh_token = refresh_token
-        super().__init__(None)
+        super().__init__(None, debug=debug)
 
     async def login_token(self):
         access_token = request.form.get('access_token')
@@ -85,15 +88,15 @@ class MyCloudServer(CloudServer):
 
         return response.json()['token_key']
 
-    # def run(self, bind_str, threads=8, listen=True):
-    #     app = super().run(bind_str, listen=False)
-    #     resource_path = abspath(join(dirname(__file__), 'flask'))
-    #     # app.static_folder = join(resource_path, 'static')
-    #     app.template_folder = join(resource_path, 'templates')
-    #     host, port = super(MyCloudServer, self)._ChatBot__parse_bind(bind_str)  # noqa
-    #     if listen:
-    #         serve(app, host=host, port=port, ident=None, threads=threads)
-    #     return app
+    def run(self, bind_str, threads=8, listen=True):
+        app = super().run(bind_str, listen=False)
+        resource_path = abspath(join(dirname(__file__), 'flask'))
+        # app.static_folder = join(resource_path, 'static')
+        app.template_folder = join(resource_path, 'templates')
+        host, port = super(MyCloudServer, self)._ChatBot__parse_bind(bind_str)  # noqa
+        if listen:
+            serve(app, host=host, port=port, ident=None, threads=threads)
+        return app
 
 
 class MyChatGPT(ChatGPT):
@@ -109,6 +112,5 @@ class MyChatGPT(ChatGPT):
             self.access_tokens[token_key or self.default_token_key] = access_token
         return access_token
 
-
 # ChatBotServer(MyChatGPT(refresh_token), True).run(bind_url)
-app = MyCloudServer(getenv('REFRESH_TOKEN')).run(getenv('SERVER', '0.0.0.0:8018'), listen=False)
+# app = MyCloudServer(getenv('REFRESH_TOKEN')).run(getenv('SERVER', '0.0.0.0:8018'), listen=False)

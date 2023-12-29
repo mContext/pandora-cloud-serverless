@@ -1,6 +1,7 @@
-from flask import Flask, request, Response, make_response
-from flask_cors import CORS
 import requests
+from flask_cors import CORS
+
+from flask import Flask, request, Response, make_response
 
 app = Flask(__name__)
 CORS(app, origins=["*"])
@@ -59,4 +60,9 @@ def reverse_proxy(path):
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8888)
+    # app.run(host='0.0.0.0', port=8888)
+    from waitress import serve
+    from pandora.exts.hooks import hook_logging
+
+    hook_logging(level='DEBUG', format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s')
+    serve(app, host='0.0.0.0', port=8888, threads=8)
