@@ -113,4 +113,4 @@ class MyChatGPT(ChatGPT):
         return access_token
 
 # ChatBotServer(MyChatGPT(refresh_token), True).run(bind_url)
- app = MyCloudServer(os.getenv('REFRESH_TOKEN')).run(os.getenv('SERVER', '0.0.0.0:8018'), listen=False)
+app = MyCloudServer(os.getenv('REFRESH_TOKEN')).run(os.getenv('SERVER', '0.0.0.0:8018'), listen=False)
